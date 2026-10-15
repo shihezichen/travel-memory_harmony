@@ -3,7 +3,6 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 import { abilityAccessCtrl, common, Permissions } from '@kit.AbilityKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { fileIo as fs } from '@kit.CoreFileKit';
-import { window } from '@kit.ArkUI';
 
 const DOMAIN: number = 0x0000;
 const TAG: string = 'TravelMemory';
@@ -62,14 +61,6 @@ struct Index {
       hilog.warn(DOMAIN, TAG, 'back failed: %{public}s', JSON.stringify(err));
     }
     return false;
-  }
-
-  /**
-   * Immersive layout: hand the whole screen to the web app, drawing under the
-   * status bar. The page keeps clear of the system bars with safe-area insets.
-   */
-  onPageShow(): void {
-    this.applyImmersiveLayout();
   }
 
   build() {
@@ -337,26 +328,6 @@ struct Index {
       }
     }
     return -1;
-  }
-
-  /**
-   * Make the web view cover the whole display (under the status bar) so the
-   * page's own safe-area padding is what keeps its controls on screen.
-   */
-  private applyImmersiveLayout(): void {
-    try {
-      window.getLastWindow(this.uiContext())
-        .then((win: window.Window) => {
-          win.setWindowLayoutFullScreen(true).catch((err: BusinessError) => {
-            hilog.warn(DOMAIN, TAG, 'setWindowLayoutFullScreen failed: %{public}s', JSON.stringify(err));
-          });
-        })
-        .catch((err: BusinessError) => {
-          hilog.warn(DOMAIN, TAG, 'getLastWindow failed: %{public}s', JSON.stringify(err));
-        });
-    } catch (err) {
-      hilog.warn(DOMAIN, TAG, 'immersive layout failed: %{public}s', JSON.stringify(err));
-    }
   }
 
   private uiContext(): common.UIAbilityContext {

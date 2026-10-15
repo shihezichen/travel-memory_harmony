@@ -6,6 +6,16 @@ const DOMAIN: number = 0x0000;
 const TAG: string = 'TravelMemory';
 
 /**
+ * Edge-to-edge layout: draw the web content underneath the status bar.
+ *
+ * Off by default: the page must itself use `viewport-fit=cover` plus
+ * `env(safe-area-inset-*)` to keep its own top bar clear of the system bars.
+ * The landing page does not do this and gets clipped, so we lay the web view
+ * out below the status bar instead. Set to true once the pages handle insets.
+ */
+const IMMERSIVE: boolean = false;
+
+/**
  * Entry ability of the Travel Memory web shell.
  *
  * The whole application is a single ArkWeb page (pages/Index) that renders the
@@ -54,13 +64,13 @@ export default class EntryAbility extends UIAbility {
   }
 
   /**
-   * Lets the web app draw edge to edge (under the status bar) from the very
-   * first frame; the page keeps its own controls clear with safe-area insets.
+   * Lays the web view out below the system bars (unless `IMMERSIVE` is on), so
+   * the page's own top bar is never hidden behind the status bar.
    */
   private prepareWindow(windowStage: window.WindowStage): void {
     try {
       const mainWindow: window.Window = windowStage.getMainWindowSync();
-      mainWindow.setWindowLayoutFullScreen(true).catch((err: Error) => {
+      mainWindow.setWindowLayoutFullScreen(IMMERSIVE).catch((err: Error) => {
         hilog.warn(DOMAIN, TAG, 'setWindowLayoutFullScreen failed: %{public}s', JSON.stringify(err));
       });
     } catch (err) {

@@ -18,7 +18,9 @@ File System Access API 不可用；网页 `fullscreen()` 只在 Web 视图内生
 ## 功能
 
 - **全屏 ArkWeb** 加载 `https://top001.xin`，深/浅色跟随系统
-- **沉浸式布局**：网页内容延伸到状态栏之下（edge-to-edge），页面用 safe-area 避让系统栏
+- **状态栏避让**：默认把网页排在状态栏之下，保证网页自己的顶栏不被遮挡。若要 edge-to-edge（沉浸式），
+  把 `entry/src/main/ets/entryability/EntryAbility.ets` 里的 `IMMERSIVE` 改成 `true` —— 前提是网页自身用
+  `viewport-fit=cover` + `env(safe-area-inset-*)` 避让系统栏（当前落地页没做，开了会被状态栏压住）
 - **加载体验**：顶部细进度条；首屏连接动画；连接失败/证书错误时显示可重试的错误页
 - **下拉刷新**（`Refresh` + `WebviewController.refresh`）
 - **系统返回手势/按键**：优先回退网页历史，回到首页后才退出 App
@@ -83,7 +85,12 @@ HarmonyOS（NEXT / 纯血鸿蒙）只能安装**已签名**的 HAP，命令行�
    产物为 `entry/build/default/outputs/default/entry-default-signed.hap`）。
 
 DevEco 会把自动签名材料（`.p12` / `.cer` / `.p7b`）放到 `~/.ohos/config/`，并写入
-`build-profile.json5` 的 `signingConfigs`。**该段包含私钥路径等信息，请勿提交到仓库**（本仓库保持为空）。
+`build-profile.json5` 的 `signingConfigs`。**该段含证书路径 / 口令（本机加密），不要提交到仓库**
+（本仓库里的 `signingConfigs` 保持为 `[]`）。想让它永远不进版本库，可在本机执行一次：
+
+```bash
+git update-index --skip-worktree build-profile.json5
+```
 
 ### 方式二：命令行 hdc
 
