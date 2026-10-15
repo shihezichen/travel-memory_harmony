@@ -6,6 +6,15 @@
 把既有 Web 服务直接变成一个鸿蒙原生 App（路线：远程服务 + 本地 Web 壳）。
 相比浏览器，壳层补齐了网站自身无法提供的原生能力。
 
+## 与 Web 版的关系
+
+本 App 是一个**壳**：不打包任何网页代码，运行时直接用 ArkWeb 加载线上 `https://top001.xin`。
+因此 App 里看到的功能与 Web 版**始终一致** —— 服务器更新后重开 App 即生效，无需重新发版；
+反过来，改服务器就等于改 App。
+
+差别只在壳层，以及少数浏览器能力在 ArkWeb 上的降级（已知：`blob:` 触发的下载不走原生下载代理；
+File System Access API 不可用；网页 `fullscreen()` 只在 Web 视图内生效）。
+
 ## 功能
 
 - **全屏 ArkWeb** 加载 `https://top001.xin`，深/浅色跟随系统
@@ -54,6 +63,50 @@ export PATH="$JAVA_HOME/bin:$PATH"
 
 > 若要让仓库根目录下的 `hvigorw` 可用，可用 DevEco Studio 打开一次项目，IDE 会生成
 > 对应的 wrapper；或直接把上面的 `<DevEco>/tools/hvigor/bin/hvigorw` 加入 PATH。
+
+## 安装到鸿蒙手机
+
+HarmonyOS（NEXT / 纯血鸿蒙）只能安装**已签名**的 HAP，命令行产出的
+`entry-default-unsigned.hap` 无法直接安装。签名需要**华为开发者账号**（个人可免费注册，需实名认证）。
+
+### 前置：打开开发者模式与 USB 调试
+
+1. 设置 → 关于手机 → 连续点击「软件版本号」7 次 → 输入锁屏密码，开启开发者模式；
+2. 设置 → 系统和更新 → 开发人员选项 → 打开「USB 调试」（可一并打开「仅充电模式下允许 ADB 调试」）；
+3. 用数据线连接电脑，手机弹出「是否允许 USB 调试」→ 允许（建议勾选「始终允许」）。
+
+### 方式一：DevEco Studio（推荐，最省事）
+
+1. DevEco Studio 打开本项目，右上角登录华为开发者账号；
+2. `File → Project Structure → Signing Configs`，勾选 **Automatically generate signature**，等待生成完成；
+3. 顶部设备列表选择已连接的手机，点击 ▶ Run（或 `Build → Build Hap(s)/APP(s) → Build Hap(s)`，
+   产物为 `entry/build/default/outputs/default/entry-default-signed.hap`）。
+
+DevEco 会把自动签名材料（`.p12` / `.cer` / `.p7b`）放到 `~/.ohos/config/`，并写入
+`build-profile.json5` 的 `signingConfigs`。**该段包含私钥路径等信息，请勿提交到仓库**（本仓库保持为空）。
+
+### 方式二：命令行 hdc
+
+```bash
+HDC="<DevEco>/sdk/default/openharmony/toolchains/hdc.exe"
+
+# 1. 确认手机已连接（应能看到 USB 设备，而不是空）
+"$HDC" list targets
+
+# 2. 先在 DevEco 里完成过一次自动签名，再打包（产物带 -signed 后缀）
+<DevEco>/tools/hvigor/bin/hvigorw.bat assembleHap --no-daemon
+
+# 3. 安装；重复安装用 -r 覆盖
+"$HDC" install    entry/build/default/outputs/default/entry-default-signed.hap
+"$HDC" install -r entry/build/default/outputs/default/entry-default-signed.hap
+```
+
+### 关于系统版本
+
+当前 `compatibleSdkVersion 6.1.1(24)`，即需要 **HarmonyOS 6.1.1（API 24）及以上**。
+若要支持更低版本（如 HarmonyOS 5 / API 12），需在 DevEco 的 SDK Manager 中额外安装对应 SDK，
+再把 `build-profile.json5` 的 `compatibleSdkVersion` / `targetSdkVersion` 调低后重新编译。
+若没有真机，也可用 DevEco Studio 的模拟器（同样需要登录账号）先跑起来。
 
 ## 结构
 
