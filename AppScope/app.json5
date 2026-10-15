@@ -1,0 +1,10 @@
+{
+  "app": {
+    "bundleName": "xin.top001.travelmemory",
+    "vendor": "shihezichen",
+    "versionCode": 1000000,
+    "versionName": "1.0.0",
+    "icon": "$media:app_icon",
+    "label": "$string:app_name"
+  }
+}

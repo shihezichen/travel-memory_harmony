@@ -1,0 +1,13 @@
+{
+  "modelVersion": "5.0.0",
+  "name": "travelmemory",
+  "version": "1.0.0",
+  "description": "Travel Memory HarmonyOS shell app (ArkWeb -> https://top001.xin)",
+  "main": "",
+  "author": "shihezichen",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {
+    "@ohos/hypium": "1.0.19"
+  }
+}

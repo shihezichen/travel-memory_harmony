@@ -1,0 +1,7 @@
+{
+  "string": [
+    { "name": "module_desc", "value": "Travel Memory web shell" },
+    { "name": "ability_desc", "value": "Loads https://top001.xin in ArkWeb" },
+    { "name": "EntryAbility_label", "value": "Travel Memory" }
+  ]
+}
