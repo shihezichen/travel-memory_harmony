@@ -46,6 +46,11 @@ File System Access API 不可用；网页 `fullscreen()` 只在 Web 视图内生
 2. `File > Project Structure > Signing Configs` 配置签名（自用可选「自动签名」）；
 3. 连接鸿蒙设备或模拟器，点击 Run，或 `Build > Build Hap(s)/APP(s)`。
 
+> ⚠️ 本项目 `bundleName` 是 `xin.top001.travelmemory_harmony`（与 AGC 的包名一致）。
+> 如果你改过 `bundleName`，需要**重新勾一次自动签名**，否则会在 `SignHap` 阶段报
+> 「bundleName ... does not match ... SigningConfigs」。
+> 详见 [AGC-RELEASE.md](./AGC-RELEASE.md) 的「0.5」一节。
+
 ### 方式二：命令行
 
 DevEco Studio 自带了 `hvigorw`、`ohpm` 与 JBR，命令行构建时把 SDK 和 JDK 指给它即可：
@@ -147,7 +152,7 @@ export JAVA_HOME="<DevEco>/jbr"
 ## 结构
 
 ```
-AppScope/app.json5                          # 应用级配置（bundleName: xin.top001.travelmemory）
+AppScope/app.json5                          # 应用级配置（bundleName: xin.top001.travelmemory_harmony）
 AppScope/resources/base/media/              # 应用分层图标（background / foreground）
 entry/src/main/module.json5                 # 权限 / Ability / 备份配置
 entry/src/main/ets/entryability/            # Ability 入口（窗口准备、加载 page）

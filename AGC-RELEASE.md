@@ -21,6 +21,32 @@
 
 ---
 
+## 0.5 包名必须与 AGC 一字不差（**改完要重新签名**）
+
+- 工程里的包名 = `AppScope/app.json5` 的 `bundleName`
+- AGC 里的包名 = 建 APP ID 时填的「应用包名」
+- 两者**必须完全一致**（含大小写），否则上传 `.app` 会被拒。
+
+本仓库的 `bundleName` 已对齐 AGC 的 **`xin.top001.travelmemory_harmony`**。
+
+> ⚠️ **一旦改过 `bundleName`，本地打包会在签名阶段失败**：
+>
+> ```
+> 00303074 Configuration Error
+> The bundleName in app.json5/hvigorfile.ts does not match the bundleName
+> in the generated SigningConfigs.
+> ```
+>
+> 原因：调试用的 Profile（`~/.ohos/config/*.p7b`）里把包名固化了，它还是旧的。
+>
+> **修法（一次点击）**：DevEco Studio → `File → Project Structure → Signing Configs`
+> → 勾一次 **Automatically generate signature**，让它按新包名重新签一份调试 Profile。
+>
+> 走**发布证书**分发的话可以跳过这一步 —— 发布 Profile 是 AGC 按包名现签的，
+> 打好 `.app` 后连 DevEco 都不需要开。
+
+---
+
 ## 1. 前置准备
 
 1. **华为开发者账号**：<https://developer.huawei.com/consumer/cn/> 注册并完成**实名认证**
@@ -42,7 +68,7 @@ AppGallery Connect → **我的项目** → 新建项目 → 项目里 **添加�
 | 字段 | 填什么 |
 | --- | --- |
 | 平台 | HarmonyOS |
-| 应用包名 | `xin.top001.travelmemory` ← **必须和 `AppScope/app.json5` 的 `bundleName` 一字不差** |
+| 应用包名 | `xin.top001.travelmemory_harmony` ← **必须和 `AppScope/app.json5` 的 `bundleName` 一字不差** |
 | 应用名称 | 旅行记忆 |
 | 应用分类 | 旅游 / 生活（按实际选） |
 
@@ -80,7 +106,7 @@ AGC → **证书、App ID 和 Profile**：
    用单个 `.cer` 真机校验会失败。
 2. **Profile 管理 → 新增 Profile**：
    - 类型：**发布**
-   - 绑定：上面那张证书 + 包名 `xin.top001.travelmemory`
+   - 绑定：上面那张证书 + 包名 `xin.top001.travelmemory_harmony`
    - 下载 `.p7b`
 
 （如果只是想给几个朋友用、不上架：Profile 类型选**调试**并把这些设备加进「设备管理」，
