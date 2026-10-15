@@ -118,37 +118,31 @@ HDC="<DevEco>/sdk/default/openharmony/toolchains/hdc.exe"
 ## 分发给别人的鸿蒙手机
 
 上面那套是**调试签名**：证书里绑了你这台设备的 UDID，装到别人手机上会被拒绝。
-要让别人的鸿蒙手机也能装，只有两条路：
+要让别人的鸿蒙手机也能装，只有两条路，且都绕不开**你的华为开发者账号（需实名）**：
 
-| 方式 | 别人怎么拿到 | 说明 |
-| --- | --- | --- |
-| **上架 AppGallery** | 应用市场里搜到、点安装 | 需要发布证书 + 发布 Profile，提交后要审核 |
-| **企业/内部测试分发** | 拿 `.app` 直接装 / 走 AGC 的测试渠道 | 同样需要发布证书；受限分发需要把对方设备加进白名单 |
+| 方式 | 别人怎么拿到 |
+| --- | --- |
+| **上架 AppGallery** | 应用市场里搜到、点安装（提交后要审核） |
+| **受限分发 / 内部测试** | 拿 `.app` 直接装，或走 AGC 的测试渠道 |
 
-两种都绕不开**华为开发者账号（需实名）**在 [AppGallery Connect](https://developer.huawei.com/consumer/cn/service/josp/agc/index.html)
-上申请**发布证书（.cer）**和**发布 Profile（.p7b）**——这一步必须你本人操作，我代替不了。
+工程侧已经全部准备好，只差你在 [AppGallery Connect](https://developer.huawei.com/consumer/cn/service/josp/agc/index.html)
+上申请**发布证书**和**发布 Profile**。
 
-工程侧我已经准备好，拿到证书后只差**填一段配置**：
+👉 **逐步操作清单见 [AGC-RELEASE.md](./AGC-RELEASE.md)**（建应用 → 生成密钥 → 申请证书/Profile
+→ 改 `signingConfigs` → 打包 → 提交审核 → 常见卡点）。
 
-1. AGC 里「我的应用 → 新建应用」，包名填 `xin.top001.travelmemory`；
-2. 「证书、App ID 和 Profile」里生成 **发布证书** 和 **发布 Profile**，下载 `.cer` / `.p7b` / `.p12`；
-3. 把 `build-profile.json5` 的 `signingConfigs` 换成发布证书（和调试那段结构一样，
-   只是 `certpath` / `profile` / `storeFile` 指向新文件、`keyAlias` 改成发布用的别名）；
-4. 打包：
+打包命令（拿到发布证书之后）：
 
 ```bash
 export DEVECO_SDK_HOME="<DevEco>/sdk"
 export JAVA_HOME="<DevEco>/jbr"
-"<DevEco>/tools/hvigor/bin/hvigorw.bat" assembleApp --no-daemon
+"<DevEco>/tools/hvigor/bin/hvigorw.bat" assembleApp --no-daemon -p buildMode=release
 ```
 
-产物是 `build/outputs/default/travelmemory-default-signed.app`（`.app` 是上架用的整包，
-里面就是 `entry-default-signed.hap`）。上传 AGC 后按提示补应用信息、隐私声明即可提交。
-
-> **`.hap` 与 `.app` 的区别**：`.hap` 是模块包，`hdc install` 装的是它；
-> `.app` 是打包给应用市场/分发用的整包，不能直接用 hdc 装。
-> 顺带一提，**鸿蒙装不了 APK**，APK 是 Android 的格式；要覆盖 Android 手机请看
-> [travel-memory_android](https://github.com/shihezichen/travel-memory_android)。
+产物：`build/outputs/default/travel-memory_harmony-default-signed.app`
+（`.app` 是上架用的整包，里面就是 `.hap`；`.hap` 才是 `hdc install` 装的那个。
+另外**鸿蒙装不了 APK** —— APK 是 Android 的格式，覆盖 Android 手机请看
+[travel-memory_android](https://github.com/shihezichen/travel-memory_android)。）
 
 ## 结构
 
@@ -164,6 +158,7 @@ entry/src/main/resources/base/media/        # 启动图标等资源
 entry/src/test/                             # 本地单元测试
 entry/src/ohosTest/                         # 设备端测试
 hvigorfile.ts / hvigor/                     # 构建配置
+AGC-RELEASE.md                              # 上架 / 分发给其他鸿蒙手机的逐步清单
 ```
 
 修改服务器地址：`entry/src/main/ets/common/AppConfig.ets` 的 `SERVER_URL` 与 `SERVER_HOST`。
