@@ -1,6 +1,7 @@
 import { webview } from '@kit.ArkWeb';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { common } from '@kit.AbilityKit';
+import { window } from '@kit.ArkUI';
 
 const TAG: string = 'TravelMemory';
 const DOMAIN: number = 0x0000;
@@ -20,6 +21,28 @@ struct Index {
       src: SERVER_URL,
       controller: this.controller
     });
+  }
+
+  onPageShow(): void {
+    // immersive: draw web content under the status bar
+    window.getLastWindow(getContext(this)).then((win) => {
+      win.setWindowLayoutFullScreen(true);
+    }).catch((e: Error) => {
+      hilog.error(DOMAIN, TAG, 'fullscreen layout failed: %{public}s', JSON.stringify(e));
+    });
+  }
+
+  onBackPress(): boolean {
+    // let the web page consume the back gesture; only exit when no history
+    try {
+      if (this.controller.accessBackward()) {
+        this.controller.backward();
+        return true;
+      }
+    } catch (e) {
+      hilog.error(DOMAIN, TAG, 'onBackPress failed: %{public}s', JSON.stringify(e));
+    }
+    return false; // default behaviour (exit/minimize)
   }
 
   build() {
