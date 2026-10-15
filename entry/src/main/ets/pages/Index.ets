@@ -3,17 +3,11 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 import { abilityAccessCtrl, common, Permissions } from '@kit.AbilityKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { fileIo as fs } from '@kit.CoreFileKit';
+import { window } from '@kit.ArkUI';
+import { APP_UA_SUFFIX, ERR_ABORTED, IMMERSIVE, SERVER_HOST, SERVER_URL } from '../common/AppConfig';
 
 const DOMAIN: number = 0x0000;
 const TAG: string = 'TravelMemory';
-
-/** Self-hosted Travel Memory server rendered by this shell. */
-const SERVER_URL: string = 'https://top001.xin';
-const SERVER_HOST: string = 'top001.xin';
-const APP_UA_SUFFIX: string = ' TravelMemoryHarmony/1.0';
-
-/** net::ERR_ABORTED - emitted for user/Javascript cancelled loads, not a real failure. */
-const ERR_ABORTED: number = -3;
 
 /**
  * The whole application: a full screen ArkWeb view pointing at the Travel
@@ -63,6 +57,11 @@ struct Index {
     return false;
   }
 
+  /** Re-assert the immersive chrome whenever the page is (re)shown. */
+  onPageShow(): void {
+    this.applyImmersiveChrome();
+  }
+
   build() {
     Stack({ alignContent: Alignment.TopStart }) {
       Refresh({ refreshing: $$this.isRefreshing }) {
@@ -94,6 +93,7 @@ struct Index {
             this.firstLoadDone = true;
             this.isRefreshing = false;
             this.progress = 100;
+            this.applyImmersiveChrome();
           })
           .onProgressChange((event) => {
             this.progress = event.newProgress;
@@ -218,6 +218,62 @@ struct Index {
     } catch (err) {
       hilog.warn(DOMAIN, TAG, 'setDownloadDelegate failed: %{public}s', JSON.stringify(err));
     }
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Immersive chrome (edge to edge without clipping)                    */
+  /* ------------------------------------------------------------------ */
+
+  /**
+   * The web app is written for a browser, where the status bar sits outside the
+   * viewport, so its own top bars do not reserve the notch. With the window laid
+   * out edge to edge we push exactly those bars down by the real status bar
+   * height, and colour the status bar icons to match the page.
+   */
+  private async applyImmersiveChrome(): Promise<void> {
+    if (!IMMERSIVE) {
+      return;
+    }
+    try {
+      const mainWindow: window.Window = await window.getLastWindow(this.uiContext());
+      const avoidArea: window.AvoidArea = mainWindow.getWindowAvoidArea(window.AvoidAreaType.TYPE_SYSTEM);
+      const topVp: number = Math.round(this.getUIContext().px2vp(avoidArea.topRect.height));
+      if (topVp <= 0) {
+        return;
+      }
+      const tone: string = await this.controller.runJavaScript(this.buildInsetScript(topVp));
+      await mainWindow.setWindowSystemBarProperties({
+        statusBarContentColor: tone.indexOf('dark') >= 0 ? '#FFFFFF' : '#000000'
+      });
+      hilog.info(DOMAIN, TAG, 'immersive chrome: top=%{public}d tone=%{public}s', topVp, tone);
+    } catch (err) {
+      hilog.warn(DOMAIN, TAG, 'applyImmersiveChrome failed: %{public}s', JSON.stringify(err));
+    }
+  }
+
+  /**
+   * Adds the notch padding to the page's own top chrome (idempotent) and reports
+   * the page tone back so the status bar icons stay readable.
+   */
+  private buildInsetScript(topVp: number): string {
+    return `(function(){try{
+      if(!document.body)return 'nobody';
+      var bg=getComputedStyle(document.body).backgroundColor||'';
+      var n=bg.match(/[0-9]+/g)||[];
+      var r=parseInt(n[0]||'255',10),g=parseInt(n[1]||'255',10),b=parseInt(n[2]||'255',10);
+      var dark=(0.299*r+0.587*g+0.114*b)<140;
+      if(!window.__tmSafe){
+        var px=${topVp};
+        var mv=document.querySelector('meta[name=viewport]');
+        if(mv){var c=mv.getAttribute('content')||'';if(c.indexOf('viewport-fit')<0)mv.setAttribute('content',c+', viewport-fit=cover');}
+        var st=document.createElement('style');
+        st.id='tm-safe-area';
+        st.textContent='header{padding-top:'+px+'px !important}.topbar{padding-top:'+px+'px !important}';
+        document.head.appendChild(st);
+        window.__tmSafe=1;
+      }
+      return dark?'dark':'light';
+    }catch(e){return 'err:'+e}})()`;
   }
 
   /**

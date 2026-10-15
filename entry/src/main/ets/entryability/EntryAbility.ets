@@ -1,19 +1,10 @@
 import { AbilityConstant, ConfigurationConstant, UIAbility, Want } from '@kit.AbilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { window } from '@kit.ArkUI';
+import { IMMERSIVE } from '../common/AppConfig';
 
 const DOMAIN: number = 0x0000;
 const TAG: string = 'TravelMemory';
-
-/**
- * Edge-to-edge layout: draw the web content underneath the status bar.
- *
- * Off by default: the page must itself use `viewport-fit=cover` plus
- * `env(safe-area-inset-*)` to keep its own top bar clear of the system bars.
- * The landing page does not do this and gets clipped, so we lay the web view
- * out below the status bar instead. Set to true once the pages handle insets.
- */
-const IMMERSIVE: boolean = false;
 
 /**
  * Entry ability of the Travel Memory web shell.
@@ -64,8 +55,9 @@ export default class EntryAbility extends UIAbility {
   }
 
   /**
-   * Lays the web view out below the system bars (unless `IMMERSIVE` is on), so
-   * the page's own top bar is never hidden behind the status bar.
+   * Immersive window (`IMMERSIVE`): the web view covers the whole screen; the
+   * page background fills behind the system bars, and `Index` keeps the page's
+   * own top chrome clear of the notch.
    */
   private prepareWindow(windowStage: window.WindowStage): void {
     try {

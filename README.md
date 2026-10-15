@@ -18,9 +18,9 @@ File System Access API 不可用；网页 `fullscreen()` 只在 Web 视图内生
 ## 功能
 
 - **全屏 ArkWeb** 加载 `https://top001.xin`，深/浅色跟随系统
-- **状态栏避让**：默认把网页排在状态栏之下，保证网页自己的顶栏不被遮挡。若要 edge-to-edge（沉浸式），
-  把 `entry/src/main/ets/entryability/EntryAbility.ets` 里的 `IMMERSIVE` 改成 `true` —— 前提是网页自身用
-  `viewport-fit=cover` + `env(safe-area-inset-*)` 避让系统栏（当前落地页没做，开了会被状态栏压住）
+- **沉浸式 + 不遮挡**：窗口 edge-to-edge，页面背景铺满到状态栏底下；同时 App 会把状态栏高度注入网页，
+  把网页自己的顶栏（`header` / `.topbar`）推到状态栏之下，并按页面明暗自动切换状态栏图标颜色。
+  开关在 `entry/src/main/ets/common/AppConfig.ets` 的 `IMMERSIVE`
 - **加载体验**：顶部细进度条；首屏连接动画；连接失败/证书错误时显示可重试的错误页
 - **下拉刷新**（`Refresh` + `WebviewController.refresh`）
 - **系统返回手势/按键**：优先回退网页历史，回到首页后才退出 App
@@ -123,14 +123,15 @@ AppScope/resources/base/media/              # 应用分层图标（background / 
 entry/src/main/module.json5                 # 权限 / Ability / 备份配置
 entry/src/main/ets/entryability/            # Ability 入口（窗口准备、加载 page）
 entry/src/main/ets/entrybackupability/      # 应用数据备份/恢复
-entry/src/main/ets/pages/Index.ets          # ArkWeb 壳页面（服务器地址在此修改）
+entry/src/main/ets/common/AppConfig.ets     # 服务器地址 / UserAgent / IMMERSIVE 开关
+entry/src/main/ets/pages/Index.ets          # ArkWeb 壳页面（下拉刷新、返回、下载、权限、沉浸式补偿）
 entry/src/main/resources/base/media/        # 启动图标等资源
 entry/src/test/                             # 本地单元测试
 entry/src/ohosTest/                         # 设备端测试
 hvigorfile.ts / hvigor/                     # 构建配置
 ```
 
-修改服务器地址：`entry/src/main/ets/pages/Index.ets` 顶部的 `SERVER_URL` 与 `SERVER_HOST`。
+修改服务器地址：`entry/src/main/ets/common/AppConfig.ets` 的 `SERVER_URL` 与 `SERVER_HOST`。
 
 ## 权限说明
 
