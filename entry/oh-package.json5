@@ -1,0 +1,9 @@
+{
+  "name": "entry",
+  "version": "1.0.0",
+  "description": "Travel Memory HarmonyOS entry module (ArkWeb shell)",
+  "main": "",
+  "author": "shihezichen",
+  "license": "MIT",
+  "dependencies": {}
+}

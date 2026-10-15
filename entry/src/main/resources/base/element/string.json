@@ -1,7 +1,36 @@
 {
   "string": [
-    { "name": "module_desc", "value": "Travel Memory web shell" },
-    { "name": "ability_desc", "value": "Loads https://top001.xin in ArkWeb" },
-    { "name": "EntryAbility_label", "value": "Travel Memory" }
+    {
+      "name": "module_desc",
+      "value": "Travel Memory 网页壳（ArkWeb 加载 https://top001.xin）"
+    },
+    {
+      "name": "EntryAbility_desc",
+      "value": "旅行记忆"
+    },
+    {
+      "name": "EntryAbility_label",
+      "value": "旅行记忆"
+    },
+    {
+      "name": "reason_location",
+      "value": "用于在地图和轨迹中定位你当前的位置，记录旅行足迹"
+    },
+    {
+      "name": "reason_camera",
+      "value": "用于拍摄照片并上传到你的旅行记忆"
+    },
+    {
+      "name": "reason_microphone",
+      "value": "用于录制或上传带声音的视频"
+    },
+    {
+      "name": "reason_read_media",
+      "value": "用于选择相册中的照片和视频上传"
+    },
+    {
+      "name": "reason_write_media",
+      "value": "用于将旅行照片和视频保存到你的设备"
+    }
   ]
 }

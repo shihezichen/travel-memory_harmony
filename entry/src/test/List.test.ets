@@ -1,9 +1,5 @@
-import { describe, it, expect } from '@ohos/hypium';
+import localUnitTest from './LocalUnit.test';
 
-export default function abilityTest() {
-  describe('abilityTest', () => {
-    it('assertServerUrl', 0, () => {
-      expect('https://top001.xin').assertEqual('https://top001.xin');
-    });
-  });
+export default function testsuite() {
+  localUnitTest();
 }

@@ -1,0 +1,20 @@
+import { hilog } from '@kit.PerformanceAnalysisKit';
+import { BackupExtensionAbility, BundleVersion } from '@kit.CoreFileKit';
+
+const DOMAIN: number = 0x0000;
+const TAG: string = 'TravelMemory';
+
+/**
+ * Enables local backup / restore of application data.
+ */
+export default class EntryBackupAbility extends BackupExtensionAbility {
+  async onBackup(): Promise<void> {
+    hilog.info(DOMAIN, TAG, 'onBackup ok');
+    await Promise.resolve();
+  }
+
+  async onRestore(bundleVersion: BundleVersion): Promise<void> {
+    hilog.info(DOMAIN, TAG, 'onRestore ok %{public}s', JSON.stringify(bundleVersion));
+    await Promise.resolve();
+  }
+}

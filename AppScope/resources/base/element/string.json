@@ -1,5 +1,8 @@
 {
   "string": [
-    { "name": "app_name", "value": "Travel Memory" }
+    {
+      "name": "app_name",
+      "value": "旅行记忆"
+    }
   ]
 }

@@ -1,4 +1,4 @@
-import { abilityTest } from './List.test';
+import abilityTest from './Ability.test';
 
 export default function testsuite() {
   abilityTest();
