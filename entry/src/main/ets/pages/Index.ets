@@ -1,5 +1,6 @@
 import { webview } from '@kit.ArkWeb';
 import { hilog } from '@kit.PerformanceAnalysisKit';
+import { common } from '@kit.AbilityKit';
 
 const TAG: string = 'TravelMemory';
 const DOMAIN: number = 0x0000;
@@ -8,6 +9,7 @@ const SERVER_URL: string = 'https://top001.xin';
 @Entry
 @Component
 struct Index {
+  @State isRefreshing: boolean = false;
   controller: webview.WebviewController = new webview.WebviewController();
   @State progress: number = 0;
   @State loading: boolean = true;
@@ -22,14 +24,15 @@ struct Index {
 
   build() {
     Stack() {
-      Web({ src: SERVER_URL, controller: this.controller }) {
-        // allow navigation inside the app; open external links via system browser
-      }
-      .width('100%')
-      .height('100%')
-      .javaScriptAccess(true)
-      .domStorageAccess(true)
-      .fileAccess(false)
+      Refresh({ refreshing: $$this.isRefreshing }) {
+        Web({ src: SERVER_URL, controller: this.controller }) {
+          // allow navigation inside the app; external links open via system browser
+        }
+        .width('100%')
+        .height('100%')
+        .javaScriptAccess(true)
+        .domStorageAccess(true)
+        .fileAccess(false)
       .onControllerAttached(() => {
         hilog.info(DOMAIN, TAG, 'web controller attached');
       })
@@ -56,6 +59,41 @@ struct Index {
           hilog.info(DOMAIN, TAG, 'visited: %{public}s', event.url);
         }
       })
+      .onLoadIntercept((event) => {
+        // external links -> system browser; keep same-host navigation inside the app
+        if (!event) {
+          return false;
+        }
+        const url = event.data.getRequestUrl();
+        if (!url.startsWith('http')) {
+          return false; // let non-http schemes (mailto etc.) fail silently or default
+        }
+        if (url.startsWith(SERVER_URL)) {
+          return false;
+        }
+        try {
+          const context = getContext(this) as common.UIAbilityContext;
+          context.openLink(url, { appLinkingOnly: false });
+          hilog.info(DOMAIN, TAG, 'external link -> system: %{public}s', url);
+        } catch (e) {
+          hilog.error(DOMAIN, TAG, 'openLink failed: %{public}s', JSON.stringify(e));
+        }
+        return true;
+      })
+      }
+      .onRefreshing(() => {
+        try {
+          this.controller.refresh();
+        } catch (e) {
+          this.controller.loadUrl(SERVER_URL);
+        }
+        // stop the spinner shortly after; onPageEnd also signals completion
+        setTimeout(() => {
+          this.isRefreshing = false;
+        }, 1500);
+      })
+      .width('100%')
+      .height('100%')
 
       if (this.loading && !this.loadError) {
         Column() {
