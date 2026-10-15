@@ -254,6 +254,11 @@ struct Index {
   /**
    * Adds the notch padding to the page's own top chrome (idempotent) and reports
    * the page tone back so the status bar icons stay readable.
+   *
+   * A page that already reserves the notch itself advertises it with
+   * `<meta name="tm-safe-area" content="1">` (see static/index.html in the web
+   * repo); when it does, we only read the tone and inject nothing, otherwise the
+   * padding would be applied twice.
    */
   private buildInsetScript(topVp: number): string {
     return `(function(){try{
@@ -263,14 +268,16 @@ struct Index {
       var r=parseInt(n[0]||'255',10),g=parseInt(n[1]||'255',10),b=parseInt(n[2]||'255',10);
       var dark=(0.299*r+0.587*g+0.114*b)<140;
       if(!window.__tmSafe){
-        var px=${topVp};
-        var mv=document.querySelector('meta[name=viewport]');
-        if(mv){var c=mv.getAttribute('content')||'';if(c.indexOf('viewport-fit')<0)mv.setAttribute('content',c+', viewport-fit=cover');}
-        var st=document.createElement('style');
-        st.id='tm-safe-area';
-        st.textContent='header{padding-top:'+px+'px !important}.topbar{padding-top:'+px+'px !important}';
-        document.head.appendChild(st);
         window.__tmSafe=1;
+        if(!document.querySelector('meta[name=tm-safe-area]')){
+          var px=${topVp};
+          var mv=document.querySelector('meta[name=viewport]');
+          if(mv){var c=mv.getAttribute('content')||'';if(c.indexOf('viewport-fit')<0)mv.setAttribute('content',c+', viewport-fit=cover');}
+          var st=document.createElement('style');
+          st.id='tm-safe-area';
+          st.textContent='header{padding-top:'+px+'px !important}.topbar{padding-top:'+px+'px !important}';
+          document.head.appendChild(st);
+        }
       }
       return dark?'dark':'light';
     }catch(e){return 'err:'+e}})()`;
