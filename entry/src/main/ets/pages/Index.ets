@@ -4,7 +4,25 @@ import { abilityAccessCtrl, common, Permissions } from '@kit.AbilityKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { fileIo as fs } from '@kit.CoreFileKit';
 import { window } from '@kit.ArkUI';
+import { http } from '@kit.NetworkKit';
+import { photoAccessHelper } from '@kit.MediaLibraryKit';
 import { APP_UA_SUFFIX, ERR_ABORTED, IMMERSIVE, SERVER_HOST, SERVER_URL } from '../common/AppConfig';
+
+/**
+ * JS bridge object injected into the web view. The web page calls
+ * `window.hmSmartWebviewBridge.saveToGallery(url, name)` (see tmNativeDownload
+ * in the web repo); we forward it to the page component which downloads the
+ * media with the web session cookie and saves it into the system gallery.
+ */
+class GalleryBridge {
+  private owner: Index;
+  constructor(owner: Index) {
+    this.owner = owner;
+  }
+  saveToGallery(url: string, name: string): void {
+    this.owner.saveMediaToGallery(url, name);
+  }
+}
 
 const DOMAIN: number = 0x0000;
 const TAG: string = 'TravelMemory';
@@ -203,6 +221,7 @@ struct Index {
   private onControllerAttached(): void {
     hilog.info(DOMAIN, TAG, 'web controller attached');
     this.setupDownloads();
+    this.registerGalleryBridge();
     try {
       // Keep the native user agent intact and just append a marker so the
       // server can tell the app apart from a plain mobile browser.
@@ -516,6 +535,79 @@ struct Index {
       this.toast('下载失败，请重试');
       hilog.error(DOMAIN, TAG, 'download failed: %{public}d', item.getLastErrorCode());
     });
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Native download bridge                                              */
+  /* ------------------------------------------------------------------ */
+
+  /**
+   * Injects `window.hmSmartWebviewBridge.saveToGallery(url, name)` into the page.
+   * The web repo (tmNativeDownload) already knows this name, so once the bridge
+   * exists the page stops using window.open() and calls us directly - we then
+   * download the file with the web session cookie and drop it into the system
+   * photo gallery (so it shows up in the album, not just inside the app).
+   */
+  private registerGalleryBridge(): void {
+    try {
+      this.controller.registerJavaScriptProxy(new GalleryBridge(this), 'hmSmartWebviewBridge', ['saveToGallery']);
+      hilog.info(DOMAIN, TAG, 'gallery bridge registered');
+    } catch (err) {
+      hilog.warn(DOMAIN, TAG, 'registerJavaScriptProxy failed: %{public}s', JSON.stringify(err));
+    }
+  }
+
+  private async saveMediaToGallery(url: string, name: string): Promise<void> {
+    if (!url || url.length === 0) {
+      this.toast('下载地址为空');
+      return;
+    }
+    const granted: boolean = await this.ensurePermissions(['ohos.permission.WRITE_IMAGEVIDEO']);
+    if (!granted) {
+      this.toast('没有相册权限，无法保存');
+      return;
+    }
+    try {
+      // The web login cookie (tm_token) lives in the ArkWeb cookie jar; pull it
+      // out and send it with the native request, otherwise the download API
+      // returns 401/404. Different SDK versions expose fetchCookie / getCookie,
+      // so probe both.
+      const cm: any = webview.WebCookieManager;
+      let cookie: string = '';
+      try {
+        cookie = (typeof cm.fetchCookie === 'function' ? cm.fetchCookie(url) : '')
+          || (typeof cm.getCookie === 'function' ? cm.getCookie(url) : '')
+          || '';
+      } catch (e) {
+        cookie = '';
+      }
+      const isVideo: boolean = /\.(mp4|webm|mov|m4v|avi)$/i.test(name || '');
+      const httpRequest = http.createHttp();
+      const response = await httpRequest.request(url, {
+        method: http.RequestMethod.GET,
+        header: cookie ? { 'Cookie': cookie } : {},
+        expectDataType: http.HttpDataType.ARRAY_BUFFER
+      });
+      httpRequest.destroy();
+      if (response.responseCode !== 200) {
+        this.toast('下载失败：' + response.responseCode);
+        return;
+      }
+      const buf: ArrayBuffer = response.result as ArrayBuffer;
+      const context = this.uiContext();
+      const ph = photoAccessHelper.getPhotoAccessHelper(context);
+      const ext: string = isVideo ? 'mp4' : 'jpg';
+      const photoType = isVideo ? photoAccessHelper.PhotoType.VIDEO : photoAccessHelper.PhotoType.IMAGE;
+      const assetUri: string = await ph.createAsset(photoType, ext);
+      const file = fs.openSync(assetUri, fs.OpenMode.READ_WRITE);
+      fs.writeSync(file.fd, buf);
+      fs.closeSync(file.fd);
+      this.toast('已保存到相册：' + (name || '媒体'));
+      hilog.info(DOMAIN, TAG, 'saved to gallery: %{public}s', assetUri);
+    } catch (err) {
+      hilog.error(DOMAIN, TAG, 'saveMediaToGallery failed: %{public}s', JSON.stringify(err));
+      this.toast('保存失败，请重试');
+    }
   }
 
   private uniqueDownloadPath(suggestedName: string): string {
