@@ -8,6 +8,10 @@ import { http } from '@kit.NetworkKit';
 import { photoAccessHelper } from '@kit.MediaLibraryKit';
 import { APP_UA_SUFFIX, ERR_ABORTED, IMMERSIVE, SERVER_HOST, SERVER_URL } from '../common/AppConfig';
 
+interface ReqHeader {
+  Cookie?: string;
+}
+
 /**
  * JS bridge object injected into the web view. The web page calls
  * `window.hmSmartWebviewBridge.saveToGallery(url, name)` (see tmNativeDownload
@@ -557,7 +561,7 @@ struct Index {
     }
   }
 
-  private async saveMediaToGallery(url: string, name: string): Promise<void> {
+  async saveMediaToGallery(url: string, name: string): Promise<void> {
     if (!url || url.length === 0) {
       this.toast('下载地址为空');
       return;
@@ -568,24 +572,21 @@ struct Index {
       return;
     }
     try {
-      // The web login cookie (tm_token) lives in the ArkWeb cookie jar; pull it
-      // out and send it with the native request, otherwise the download API
-      // returns 401/404. Different SDK versions expose fetchCookie / getCookie,
-      // so probe both.
-      const cm: any = webview.WebCookieManager;
       let cookie: string = '';
       try {
-        cookie = (typeof cm.fetchCookie === 'function' ? cm.fetchCookie(url) : '')
-          || (typeof cm.getCookie === 'function' ? cm.getCookie(url) : '')
-          || '';
+        cookie = webview.WebCookieManager.fetchCookieSync(url);
       } catch (e) {
         cookie = '';
       }
       const isVideo: boolean = /\.(mp4|webm|mov|m4v|avi)$/i.test(name || '');
       const httpRequest = http.createHttp();
+      let headerObj: ReqHeader = {};
+      if (cookie && cookie.length > 0) {
+        headerObj.Cookie = cookie;
+      }
       const response = await httpRequest.request(url, {
         method: http.RequestMethod.GET,
-        header: cookie ? { 'Cookie': cookie } : {},
+        header: headerObj,
         expectDataType: http.HttpDataType.ARRAY_BUFFER
       });
       httpRequest.destroy();
